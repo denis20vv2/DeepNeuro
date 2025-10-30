@@ -1,60 +1,67 @@
-import torch 
-import torch.nn as nn 
-import numpy as np
+import torch
+import torch.nn as nn
 import pandas as pd
+import numpy as np
 
+# --- Загружаем данные ---
+df = pd.read_csv('dataset_simple.csv')
+X = df[['age']].values.astype(float)
+y = df[['income']].values.astype(float)
+
+# --- Нормализация вручную ---
+X_min, X_max = X.min(), X.max()
+y_min, y_max = y.min(), y.max()
+
+X_norm = (X - X_min) / (X_max - X_min)   # масштабируем в [0,1]
+y_norm = (y - y_min) / (y_max - y_min)
+
+X_tensor = torch.tensor(X_norm, dtype=torch.float32)
+y_tensor = torch.tensor(y_norm, dtype=torch.float32)
+
+# --- Сеть ---
 class NNet(nn.Module):
     def __init__(self, in_size, hidden_size, out_size):
-        nn.Module.__init__(self)
-        self.layers = nn.Sequential(nn.Linear(in_size, hidden_size), # слой линейных сумматоров
-                                    nn.Tanh(),                       # функция активации
-                                    nn.Linear(hidden_size, out_size),
-                                    nn.Tanh()
-                                    )
-    # прямой проход    
-    def forward(self,X):
-        pred = self.layers(X)
-        return pred
-    
-df = pd.read_csv('dataset_simple.csv')
-X = torch.Tensor(df.iloc[1:98, 0:2].values)
-y = df.iloc[1:98, 2].values
-y = torch.tensor(df.iloc[1:98, 2].values, dtype=torch.float32).reshape(-1,1)    
+        super(NNet, self).__init__()
+        self.layers = nn.Sequential(
+            nn.Linear(in_size, hidden_size),
+            nn.Tanh(),
+            nn.Linear(hidden_size, out_size)
+        )
 
-inputSize = X.shape[1] # количество признаков задачи 
+    def forward(self, X):
+        return self.layers(X)
 
-hiddenSizes = 3 #  число нейронов скрытого слоя 
+net = NNet(1, 5, 1)
 
-outputSize = 1
-
-net = NNet(inputSize,hiddenSizes,outputSize)
-
-with torch.no_grad():
-    pred = net.forward(X)
-
-pred = torch.Tensor(np.where(pred >=0, 1, -1).reshape(-1,1))
-
-err = sum(abs(y-pred))/2
 lossFn = nn.MSELoss()
+optimizer = torch.optim.SGD(net.parameters(), lr=0.05)
 
-optimizer = torch.optim.SGD(net.parameters(), lr=0.0099)
 
-epohs = 121
-for i in range(0,epohs):
-    pred = net.forward(X)   #  прямой проход - делаем предсказания
-    loss = lossFn(pred, y)  #  считаем ошибу 
-    optimizer.zero_grad()   #  обнуляем градиенты 
+epochs = 200
+for i in range(epochs):
+    pred = net(X_tensor)
+    loss = lossFn(pred, y_tensor) 
+    optimizer.zero_grad()
     loss.backward()
     optimizer.step()
-    if i%10==0:
-       print('Ошибка на ' + str(i+1) + ' итерации: ', loss.item())
-
     
-# Посчитаем ошибку после обучения
-with torch.no_grad():
-    pred = net.forward(X)
+    if i % 50 == 0:
+        print(f"Эпоха {i}: loss = {loss.item():.6f}")
 
-pred = torch.Tensor(np.where(pred >=0, 1, -1).reshape(-1,1))
-err = sum(abs(y-pred))/2
-print('\nОшибка (количество несовпавших ответов): ')
-print(err) # обучение работает, не делает ошибок или делает их достаточно мало
+with torch.no_grad():
+    pred_norm = net(X_tensor)
+  
+    pred_income = pred_norm.numpy() * (y_max - y_min) + y_min
+
+sorted_indices = np.argsort(X.flatten())
+X_sorted = X.flatten()[sorted_indices]
+pred_income_sorted = pred_income.flatten()[sorted_indices]
+
+
+unique_ages, unique_indices = np.unique(X_sorted, return_index=True)
+unique_pred_income = pred_income_sorted[unique_indices]
+
+print("\nПредсказанный доход для каждого возраста (уникальные значения):")
+for age_val, income_val in zip(unique_ages, unique_pred_income):
+    print(f"Возраст: {age_val}, предсказанный доход: {income_val:.2f}")
+
