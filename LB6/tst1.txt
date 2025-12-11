@@ -1,0 +1,40 @@
+[
+  {
+    "classification_label_visualization": {
+      "type": "base64",
+      "value": ,
+      "video_metadata": {
+        "video_identifier": "image",
+        "frame_number": 0,
+        "frame_timestamp": "2025-12-11T11:27:36.049228",
+        "fps": 30,
+        "measured_fps": null,
+        "comes_from_video_file": null
+      }
+    },
+    "local_file_sink": {
+      "error_status": false,
+      "message": "Data saved successfully"
+    },
+    "predictions": {
+      "inference_id": "e6aa62df-e188-4939-8cbf-38fbe6cfff7d",
+      "time": 0.004909322000457905,
+      "image": {
+        "width": 224,
+        "height": 224
+      },
+      "predictions": [
+        {
+          "class": "bike",
+          "class_id": 1,
+          "confidence": 0.971
+        }
+      ],
+      "top": "bike",
+      "confidence": 0.971,
+      "prediction_type": "classification",
+      "parent_id": "image",
+      "root_parent_id": "image"
+    }
+  }
+]
