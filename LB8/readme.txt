@@ -1,0 +1,1 @@
+Ссылка на файл colab: https://colab.research.google.com/drive/1gKJEp7qIWWaFuzdBd7QfuFmLYRJD-LNT#scrollTo=_oyZk2-R5zlE
